@@ -81,11 +81,12 @@ def train(dataset:str,budget:int):
         out = model.encoder(val_data)
         preds = out.argmax(dim=-1)
         val_f1 = f1_score(y_true=val_data.y.cpu(), y_pred=preds.cpu())
-        print(val_f1)
+        
         # logger.info('Epoch: [{}/{}] loss_train: {:.4f} acc_train: {:.4f} acc_val: {:.4f}'.format(epoch + 1, epochs, loss_train, acc_train, acc_val))
         if val_f1 > best_val_f1:
             # acc_best = acc_val
             best_val_f1 = val_f1
+            print(val_f1)
             torch.save(model.state_dict(), f'data/{dataset}_teacher.pth')
             # torch.save({'model': model.encoder.state_dict(), 'weights': updated_weights}, config['teacher']['ckpt_path']['MVC'])
             # logger.info('Acc_best is updated to {:.4f}. Model checkpoint is saved to {}.'.format(acc_best, config['teacher']['ckpt_path']['MVC']))
@@ -94,6 +95,28 @@ def train(dataset:str,budget:int):
         # break
         
     # logger.info('Final accuracy is {:.4f}'.format(acc_test))
+            
+    model.load_state_dict(torch.load(f'data/{dataset}_teacher.pth'))
+
+
+    # test_graph = load_from_pickle(f'../data/test/{dataset}')
+    test_graph = load_from_pickle(f'../data/train/{dataset}')
+    test_graph,_,_ = relabel_graph(graph=test_graph)
+    test_data = preprocessing(graph=test_graph,budget=budget).to(device)
+    model.eval()
+
+    out = model.encoder(test_data)
+    preds = out.argmax(dim=-1)
+
+    solution = torch.nonzero(preds).cpu()[0].tolist()
+
+    print(solution)
+
+    pruned_solution,_= greedy(graph= test_graph,budget=budget,ground_set=solution)
+    greedy_solution,_ = greedy(graph=test_graph,budget=budget)
+    print('Ratio:',calculate_cover(test_graph,pruned_solution)/calculate_cover(test_graph,greedy_solution))
+
+
     
 
 if __name__ == '__main__':
