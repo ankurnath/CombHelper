@@ -72,25 +72,28 @@ class TeacherModel(nn.Module):
         return loss_train, acc_train
     
     @torch.no_grad()
-    def validate(self, data, weights):
+    # def validate(self, data, weights):
+    def validate(self, data):
         out = self.encoder(data)
-        out = F.log_softmax(out, dim=-1)
+        # out = F.log_softmax(out, dim=-1)
         y = data.y
         preds = out[data.val_mask].argmax(dim=-1)
         acc_val = int((preds == y[data.val_mask]).sum()) / len(y[data.val_mask])
+
+        return acc_val
         
-        acc_train = int((out[data.train_mask].argmax(dim=-1) == y[data.train_mask]).sum()) / len(y[data.train_mask])
+        # acc_train = int((out[data.train_mask].argmax(dim=-1) == y[data.train_mask]).sum()) / len(y[data.train_mask])
         
-        error = 1 - acc_train
-        alpha = 0.5 * np.log((1 - error) / error)
-        updated_weights = weights.clone()
-        updated_weights[out[data.train_mask].argmax(dim=-1) == y[data.train_mask]] *= np.exp(0 - alpha)
-        updated_weights[out[data.train_mask].argmax(dim=-1) != y[data.train_mask]] *= np.exp(alpha)
+        # error = 1 - acc_train
+        # alpha = 0.5 * np.log((1 - error) / error)
+        # updated_weights = weights.clone()
+        # updated_weights[out[data.train_mask].argmax(dim=-1) == y[data.train_mask]] *= np.exp(0 - alpha)
+        # updated_weights[out[data.train_mask].argmax(dim=-1) != y[data.train_mask]] *= np.exp(alpha)
         
-        updated_weights = updated_weights / updated_weights.sum()
-        updated_weights *= torch.exp(data.weight)
+        # updated_weights = updated_weights / updated_weights.sum()
+        # updated_weights *= torch.exp(data.weight)
         
-        return acc_val, updated_weights / updated_weights.sum()
+        # return acc_val, updated_weights / updated_weights.sum()
     
     @torch.no_grad()
     def test(self, data):
