@@ -126,17 +126,20 @@ class StudentModel(nn.Module):
         out_t = F.softmax(out_t / self.T, dim=-1)
         return F.kl_div(out_s, out_t, reduction='sum') * (self.T ** 2) / out_s.shape[0]
     
-    def forward(self, data, weights):
+    def forward(self, data, weights,mask):
         out_s = self.encoder_s(data)
         with torch.no_grad():
             out_t = self.encoder_t(data).detach()
         
-        out_s = out_s[data.train_mask]
-        out_t = out_t[data.train_mask]
+        # out_s = out_s[data.train_mask]
+        # out_t = out_t[data.train_mask]
+
+        out_s = out_s[mask]
+        out_t = out_t[mask]
         
         kd_loss = self.KD_loss(out_s, out_t)
         
-        y = data.y[data.train_mask]
+        y = data.y[mask]
         
         out_s = F.log_softmax(out_s, dim=-1)
         acc_train = int((out_s.argmax(dim=-1) == y).sum()) / len(y)
@@ -154,18 +157,18 @@ class StudentModel(nn.Module):
         out = self.encoder_s(data)
         out = F.log_softmax(out, dim=-1)
         y = data.y
-        preds = out[data.val_mask].argmax(dim=-1)
-        acc_val = int((preds == y[data.val_mask]).sum()) / len(y[data.val_mask])
+        preds = out.argmax(dim=-1)
+        acc_val = int((preds == y).sum()) / len(y)
+        return acc_val
+        # acc_train = int((out[data.train_mask].argmax(dim=-1) == y[data.train_mask]).sum()) / len(y[data.train_mask])
         
-        acc_train = int((out[data.train_mask].argmax(dim=-1) == y[data.train_mask]).sum()) / len(y[data.train_mask])
+        # error = 1 - acc_train
+        # alpha = 0.5 * np.log((1 - error) / error)
+        # updated_weights = weights.clone()
+        # updated_weights[out[data.train_mask].argmax(dim=-1) == y[data.train_mask]] *= np.exp(0 - alpha)
+        # updated_weights[out[data.train_mask].argmax(dim=-1) != y[data.train_mask]] *= np.exp(alpha)
         
-        error = 1 - acc_train
-        alpha = 0.5 * np.log((1 - error) / error)
-        updated_weights = weights.clone()
-        updated_weights[out[data.train_mask].argmax(dim=-1) == y[data.train_mask]] *= np.exp(0 - alpha)
-        updated_weights[out[data.train_mask].argmax(dim=-1) != y[data.train_mask]] *= np.exp(alpha)
-        
-        return acc_val, updated_weights / updated_weights.sum()
+        # return acc_val, updated_weights / updated_weights.sum()
     
     @torch.no_grad()
     def test(self, data):

@@ -87,7 +87,7 @@ def train(dataset:str,budget:int):
             # acc_best = acc_val
             best_val_f1 = val_f1
             # print(val_f1)
-            torch.save(model.state_dict(), f'data/{dataset}_teacher.pth')
+            torch.save(model.encoder.state_dict(), f'models/{dataset}_budget{budget}_teacher.pth')
             # torch.save({'model': model.encoder.state_dict(), 'weights': updated_weights}, config['teacher']['ckpt_path']['MVC'])
             # logger.info('Acc_best is updated to {:.4f}. Model checkpoint is saved to {}.'.format(acc_best, config['teacher']['ckpt_path']['MVC']))
             # acc_test = model.test(data)
@@ -96,7 +96,7 @@ def train(dataset:str,budget:int):
         
     # logger.info('Final accuracy is {:.4f}'.format(acc_test))
             
-    model.load_state_dict(torch.load(f'data/{dataset}_teacher.pth'))
+    model.encoder.load_state_dict(torch.load(f'models/{dataset}_budget{budget}_teacher.pth'))
 
 
     test_graph = load_from_pickle(f'../data/test/{dataset}')

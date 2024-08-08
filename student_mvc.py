@@ -4,9 +4,13 @@ import torch
 import torch.optim as optim
 from datasets import *
 from models import GCN1, StudentModel
+from utils import *
+
+from sklearn.metrics import recall_score,f1_score
 
 
-def train():
+
+def train(dataset,budget):
     torch.manual_seed(42)
     torch.cuda.manual_seed(42)
     
@@ -20,27 +24,37 @@ def train():
     config_file = open('./config.yaml', 'r')
     config = yaml.safe_load(config_file.read())
     
-    device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     logger.info('Loading dataset...')
-    dataset = BA_Train(root=config['dataset_path'])
-    data = dataset[0].to(device, 'x', 'edge_index', 'y', 'weight')
+    graph=load_from_pickle(f'../data/train/{dataset}')
+
+    train_graph,val_graph = train_test_split(graph=graph,ratio=0.7,edge_level_split=True,seed=0)
     
+    train_graph,_,_ = relabel_graph(graph=train_graph)
+    val_graph,_,_ = relabel_graph(graph=val_graph)
+    train_data = preprocessing(graph=train_graph,budget=budget).to(device)
+    val_data = preprocessing(graph=val_graph,budget=budget).to(device)
+
+
+   
     logger.info('Loading teacher model...')
-    checkpoint = torch.load(config['teacher']['ckpt_path']['MVC'])
+    # checkpoint = torch.load(config['teacher']['ckpt_path']['MVC'])
     encoder_t = GCN1(
         in_channels=config['teacher']['in_channels'],
         hidden_channels=config['teacher']['hidden_channels'],
         out_channels=config['teacher']['out_channels']
     )
-    encoder_t.load_state_dict(checkpoint['model'])
+
+    encoder_t.load_state_dict(torch.load(f'models/{dataset}_budget{budget}_teacher.pth',map_location=device))
+    # encoder_t.load_state_dict(torch.load(f'data/{dataset}_teacher.pth',map_location=device))
     logger.info('Teacher GNN backbone is GraphSAGE')
     logger.info('In channels: {}'.format(config['teacher']['in_channels']))
     logger.info('Hidden channels: {}'.format(config['teacher']['hidden_channels']))
     logger.info('Out channels: {}'.format(config['teacher']['out_channels']))
     
     logger.info('Loading weights...')
-    weights = checkpoint['weights'].detach()
+    # weights = checkpoint['weights'].detach()
     
     logger.info('Get student model')
     encoder_s = GCN1(
@@ -74,25 +88,82 @@ def train():
     logger.info('Start training...')
     acc_best = 0.0
     epochs = config['student']['epochs']
+
+    # weights
+    out = encoder_t(train_data)
+    acc_train = int((out.argmax(dim=-1) == train_data.y).sum()) / len(train_data.y)
+    error = 1 - acc_train
+    alpha = 0.5 * np.log((1 - error) / error)
+    weights = degree (train_data.edge_index[0]).view(-1, 1)
+    updated_weights = weights / weights.sum()
+    updated_weights[out.argmax(dim=-1) == train_data.y] *= np.exp(0 - alpha)
+    updated_weights[out.argmax(dim=-1) != train_data.y] *= np.exp(alpha)
+    updated_weights *= torch.exp(weights) # why ?
+    updated_weights = updated_weights.to(device)
+
+    best_val_f1= 0
+
+    non_zero_indices = torch.nonzero(train_data.y).cpu()[0]
     for epoch in range(epochs):
         
         model.train()
-        loss_train, acc_train = model(data, weights.to(device))
+        mask = torch.cat([non_zero_indices, torch.randint(0, train_data.y.size(0), (non_zero_indices.size(0),))], dim=0).to(device)
+        loss_train, acc_train = model(train_data, updated_weights,mask=mask)
         loss_train.backward()
         optimizer.step()
 
         model.eval()
-        acc_val, updated_weights = model.validate(data, weights.to(device))
-        logger.info('Epoch: [{}/{}] loss_train: {:.4f} acc_train: {:.4f} acc_val: {:.4f}'.format(epoch + 1, epochs, loss_train, acc_train, acc_val))
-        if acc_val > acc_best:
-            acc_best = acc_val
-            # torch.save({'model': model.encoder_s.state_dict(), 'weights': updated_weights}, config['student']['ckpt_path']['MVC'])
-            logger.info('Acc_best is updated to {:.4f}. Model checkpoint is saved to {}'.format(acc_best, config['student']['ckpt_path']['MVC']))
-            acc_test = model.test(data)
-            logger.info('Test accuracy is {:.4f}'.format(acc_test))
-            
-    logger.info('Final accuracy is {:.4f}'.format(acc_test))
+
+        out = model.encoder_s(val_data)
+        preds = out.argmax(dim=-1)
+        val_f1 = f1_score(y_true=val_data.y.cpu(), y_pred=preds.cpu())
+        
+        if val_f1 > best_val_f1:
+            best_val_f1 = val_f1
+            # print("F1 score:",best_val_f1)
+            torch.save(model.encoder_s.state_dict(), f'models/{dataset}_budget{budget}_student.pth')
+
+
+    model.encoder_s.load_state_dict(torch.load(f'models/{dataset}_budget{budget}_student.pth'))
+
+
+    test_graph = load_from_pickle(f'../data/test/{dataset}')
+    # test_graph = load_from_pickle(f'../data/train/{dataset}')
+    test_graph,_,_ = relabel_graph(graph=test_graph)
+    test_data = preprocessing(graph=test_graph,budget=budget).to(device)
+    model.eval()
+
+    out = model.encoder_s(test_data)
+    preds = out.argmax(dim=-1)
+
+    solution = torch.nonzero(preds).squeeze().tolist()
+
+    # print('Solution:',torch.nonzero(preds).tolist())
+
+    pruned_solution,pruned_queries= greedy(graph= test_graph,budget=budget,ground_set=solution)
+    greedy_solution,unpruned_queries = greedy(graph=test_graph,budget=budget)
+
+    Pg = len(solution)/test_graph.number_of_nodes()
+
+    print('Size Constraint,k:',budget)
+    print('Size of Ground Set,|U|:',test_graph.number_of_nodes())
+    print('Size of Pruned Ground Set, |Upruned|:', len(solution))
+    
+    greedy_objective = calculate_cover(test_graph,greedy_solution)
+
+
+    ratio = calculate_cover(test_graph,pruned_solution)/ greedy_objective
+    print('Pg(%):', round(Pg,4)*100)
+    print('Ratio:',round(ratio,4)*100)
+    print('Queries:',round(pruned_queries/unpruned_queries,4)*100)
+
     
 
 if __name__ == '__main__':
-    train()
+
+    parser = ArgumentParser()
+    parser.add_argument( "--dataset", type=str, default='Facebook', help="Name of the dataset to be used (default: 'Facebook')" )
+    parser.add_argument( "--budget", type=int, default=10, help="Budgets" )
+  
+    args = parser.parse_args()
+    train(dataset=args.dataset,budget=args.budget)
