@@ -86,7 +86,7 @@ def train(dataset:str,budget:int):
         if val_f1 > best_val_f1:
             # acc_best = acc_val
             best_val_f1 = val_f1
-            print(val_f1)
+            # print(val_f1)
             torch.save(model.state_dict(), f'data/{dataset}_teacher.pth')
             # torch.save({'model': model.encoder.state_dict(), 'weights': updated_weights}, config['teacher']['ckpt_path']['MVC'])
             # logger.info('Acc_best is updated to {:.4f}. Model checkpoint is saved to {}.'.format(acc_best, config['teacher']['ckpt_path']['MVC']))
@@ -99,8 +99,8 @@ def train(dataset:str,budget:int):
     model.load_state_dict(torch.load(f'data/{dataset}_teacher.pth'))
 
 
-    # test_graph = load_from_pickle(f'../data/test/{dataset}')
-    test_graph = load_from_pickle(f'../data/train/{dataset}')
+    test_graph = load_from_pickle(f'../data/test/{dataset}')
+    # test_graph = load_from_pickle(f'../data/train/{dataset}')
     test_graph,_,_ = relabel_graph(graph=test_graph)
     test_data = preprocessing(graph=test_graph,budget=budget).to(device)
     model.eval()
@@ -108,13 +108,26 @@ def train(dataset:str,budget:int):
     out = model.encoder(test_data)
     preds = out.argmax(dim=-1)
 
-    solution = torch.nonzero(preds).cpu()[0].tolist()
+    solution = torch.nonzero(preds).squeeze().tolist()
 
-    print(solution)
+    # print('Solution:',torch.nonzero(preds).tolist())
 
-    pruned_solution,_= greedy(graph= test_graph,budget=budget,ground_set=solution)
-    greedy_solution,_ = greedy(graph=test_graph,budget=budget)
-    print('Ratio:',calculate_cover(test_graph,pruned_solution)/calculate_cover(test_graph,greedy_solution))
+    pruned_solution,pruned_queries= greedy(graph= test_graph,budget=budget,ground_set=solution)
+    greedy_solution,unpruned_queries = greedy(graph=test_graph,budget=budget)
+
+    Pg = len(solution)/test_graph.number_of_nodes()
+
+    print('Size Constraint,k:',budget)
+    print('Size of Ground Set,|U|:',test_graph.number_of_nodes())
+    print('Size of Pruned Ground Set, |Upruned|:', len(solution))
+    
+    greedy_objective = calculate_cover(test_graph,greedy_solution)
+
+
+    ratio = calculate_cover(test_graph,pruned_solution)/ greedy_objective
+    print('Pg(%):', round(Pg,4))
+    print('Ratio:',round(ratio,4))
+    print('Queries:',round(pruned_queries/unpruned_queries,4))
 
 
     
