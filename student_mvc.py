@@ -10,6 +10,7 @@ from sklearn.metrics import recall_score,f1_score
 
 
 
+
 def train(dataset,budget):
     torch.manual_seed(42)
     torch.cuda.manual_seed(42)
@@ -98,13 +99,13 @@ def train(dataset,budget):
     updated_weights = weights / weights.sum()
     updated_weights[out.argmax(dim=-1) == train_data.y] *= np.exp(0 - alpha)
     updated_weights[out.argmax(dim=-1) != train_data.y] *= np.exp(alpha)
-    updated_weights *= torch.exp(weights) # why ?
+    # updated_weights *= torch.exp(weights) # why ?
     updated_weights = updated_weights.to(device)
 
     best_val_f1= 0
 
     non_zero_indices = torch.nonzero(train_data.y).cpu()[0]
-    for epoch in range(epochs):
+    for epoch in tqdm(range(epochs)):
         
         model.train()
         mask = torch.cat([non_zero_indices, torch.randint(0, train_data.y.size(0), (non_zero_indices.size(0),))], dim=0).to(device)
@@ -120,14 +121,17 @@ def train(dataset,budget):
         
         if val_f1 > best_val_f1:
             best_val_f1 = val_f1
-            # print("F1 score:",best_val_f1)
+            # print("Best F1 score:",best_val_f1)
             torch.save(model.encoder_s.state_dict(), f'models/{dataset}_budget{budget}_student.pth')
 
-
+    
+    print("Best F1 score:",best_val_f1)
+    print('Performance of Student Model')
     model.encoder_s.load_state_dict(torch.load(f'models/{dataset}_budget{budget}_student.pth'))
 
 
-    test_graph = load_from_pickle(f'../data/test/{dataset}')
+    # test_graph = load_from_pickle(f'../data/test/{dataset}')
+    test_graph = nx.read_edgelist(f'../data/snap_dataset/{dataset}.txt', create_using=nx.Graph(), nodetype=int)
     # test_graph = load_from_pickle(f'../data/train/{dataset}')
     test_graph,_,_ = relabel_graph(graph=test_graph)
     test_data = preprocessing(graph=test_graph,budget=budget).to(device)
@@ -144,15 +148,12 @@ def train(dataset,budget):
     greedy_solution,unpruned_queries = greedy(graph=test_graph,budget=budget)
 
     Pg = len(solution)/test_graph.number_of_nodes()
+    greedy_objective = calculate_cover(test_graph,greedy_solution)
+    ratio = calculate_cover(test_graph,pruned_solution)/ greedy_objective
 
     print('Size Constraint,k:',budget)
     print('Size of Ground Set,|U|:',test_graph.number_of_nodes())
     print('Size of Pruned Ground Set, |Upruned|:', len(solution))
-    
-    greedy_objective = calculate_cover(test_graph,greedy_solution)
-
-
-    ratio = calculate_cover(test_graph,pruned_solution)/ greedy_objective
     print('Pg(%):', round(Pg,4)*100)
     print('Ratio:',round(ratio,4)*100)
     print('Queries:',round(pruned_queries/unpruned_queries,4)*100)

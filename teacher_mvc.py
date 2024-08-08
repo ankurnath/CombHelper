@@ -58,7 +58,7 @@ def train(dataset:str,budget:int):
     
     non_zero_indices = torch.nonzero(train_data.y).cpu()[0]
     # for epoch in range(2):
-    for epoch in range(epochs):
+    for epoch in tqdm(range(epochs)):
         
         model.train()
 
@@ -97,14 +97,17 @@ def train(dataset:str,budget:int):
     # logger.info('Final accuracy is {:.4f}'.format(acc_test))
             
     model.encoder.load_state_dict(torch.load(f'models/{dataset}_budget{budget}_teacher.pth'))
+    print("Best F1 score:",best_val_f1)
+    # print(best_val_f1)
+    
 
-
-    test_graph = load_from_pickle(f'../data/test/{dataset}')
+    # test_graph = load_from_pickle(f'../data/test/{dataset}')
     # test_graph = load_from_pickle(f'../data/train/{dataset}')
+    # graph=nx.read_edgelist(f'../../data/snap_dataset/{args.dataset}.txt', create_using=nx.Graph(), nodetype=int)
+    test_graph = nx.read_edgelist(f'../data/snap_dataset/{dataset}.txt', create_using=nx.Graph(), nodetype=int)
     test_graph,_,_ = relabel_graph(graph=test_graph)
     test_data = preprocessing(graph=test_graph,budget=budget).to(device)
     model.eval()
-
     out = model.encoder(test_data)
     preds = out.argmax(dim=-1)
 
@@ -116,18 +119,18 @@ def train(dataset:str,budget:int):
     greedy_solution,unpruned_queries = greedy(graph=test_graph,budget=budget)
 
     Pg = len(solution)/test_graph.number_of_nodes()
-
+    greedy_objective = calculate_cover(test_graph,greedy_solution)
+    ratio = calculate_cover(test_graph,pruned_solution)/ greedy_objective
+    print('Performance of teacher Model')
     print('Size Constraint,k:',budget)
     print('Size of Ground Set,|U|:',test_graph.number_of_nodes())
     print('Size of Pruned Ground Set, |Upruned|:', len(solution))
+    print('Pg(%):', round(Pg,4)*100)
+    print('Ratio:',round(ratio,4)*100)
+    print('Queries:',round(pruned_queries/unpruned_queries,4)*100)
     
-    greedy_objective = calculate_cover(test_graph,greedy_solution)
-
-
-    ratio = calculate_cover(test_graph,pruned_solution)/ greedy_objective
-    print('Pg(%):', round(Pg,4))
-    print('Ratio:',round(ratio,4))
-    print('Queries:',round(pruned_queries/unpruned_queries,4))
+    
+    
 
 
     

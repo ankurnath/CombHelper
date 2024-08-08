@@ -9,7 +9,7 @@ import networkx
 import numpy as np
 from greedy import greedy
 import random
-
+from tqdm import tqdm
 def train_test_split (graph:nx.Graph,ratio:float,edge_level_split:bool,seed:int):
 
     np.random.seed(seed)
