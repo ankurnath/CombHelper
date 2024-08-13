@@ -181,7 +181,7 @@ if __name__ == '__main__':
 
     parser = ArgumentParser()
     parser.add_argument( "--dataset", type=str, default='Facebook', help="Name of the dataset to be used (default: 'Facebook')" )
-    parser.add_argument( "--budget", type=int, default=10, help="Budgets" )
+    parser.add_argument( "--budget", type=int, default=100, help="Budgets" )
   
     args = parser.parse_args()
     train(dataset=args.dataset,budget=args.budget)

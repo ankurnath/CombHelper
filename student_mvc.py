@@ -131,8 +131,9 @@ def train(dataset,budget):
 
 
     # test_graph = load_from_pickle(f'../data/test/{dataset}')
-    test_graph = nx.read_edgelist(f'../data/snap_dataset/{dataset}.txt', create_using=nx.Graph(), nodetype=int)
+    # test_graph = nx.read_edgelist(f'../data/snap_dataset/{dataset}.txt', create_using=nx.Graph(), nodetype=int)
     # test_graph = load_from_pickle(f'../data/train/{dataset}')
+    test_graph = load_graph(f'../data/snap_dataset/{dataset}.txt')
     test_graph,_,_ = relabel_graph(graph=test_graph)
     test_data = preprocessing(graph=test_graph,budget=budget).to(device)
     model.eval()
@@ -203,7 +204,7 @@ if __name__ == '__main__':
 
     parser = ArgumentParser()
     parser.add_argument( "--dataset", type=str, default='Facebook', help="Name of the dataset to be used (default: 'Facebook')" )
-    parser.add_argument( "--budget", type=int, default=10, help="Budgets" )
+    parser.add_argument( "--budget", type=int, default=100, help="Budgets" )
   
     args = parser.parse_args()
     train(dataset=args.dataset,budget=args.budget)
