@@ -17,11 +17,11 @@ python student_mvc.py --dataset DBLP
 
 
 
-python teacher_mvc.py --dataset YouTube
-python student_mvc.py --dataset YouTube
+# python teacher_mvc.py --dataset YouTube
+# python student_mvc.py --dataset YouTube
 
-python teacher_mvc.py --dataset Skitter
-python student_mvc.py --dataset Skitter
+# python teacher_mvc.py --dataset Skitter
+# python student_mvc.py --dataset Skitter
 
-python teacher_mvc.py --dataset web-Google
-python student_mvc.py --dataset web-Google
+# python teacher_mvc.py --dataset web-Google
+# python student_mvc.py --dataset web-Google
