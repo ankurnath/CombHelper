@@ -21,7 +21,7 @@ def get_gains(graph,ground_set):
 
         gains={node:graph.degree(node)+1 for node in graph.nodes()}
     else:
-        print('A ground set has been given')
+        # print('A ground set has been given and Size:',len(ground_set))
         gains={node:graph.degree(node)+1 for node in ground_set}
         # print('Size of ground set',len(gains))
     return gains
@@ -95,19 +95,28 @@ def greedy(graph,budget,ground_set=None):
     solution=[]
     uncovered=defaultdict(lambda: True)
 
+    obj_val = 0
+
     for i in range(budget):
         number_of_queries += (len(gains)-i)
 
         selected_element=max(gains, key=gains.get)
 
+        
+
         if gains[selected_element]==0:
             print('All elements are already covered')
             break
         solution.append(selected_element)
-        # print(gains[selected_element])
+        
+
+        obj_val += gains[selected_element]
         gain_adjustment(graph,gains,selected_element,uncovered)
 
-    print('Number of queries:',number_of_queries)
+    print('Objective value =', obj_val)
+    print('Number of queries =',number_of_queries)
+
+    
 
 
     return solution,number_of_queries
@@ -115,73 +124,7 @@ def greedy(graph,budget,ground_set=None):
         
 
 
-if __name__ == "__main__":
-    parser = ArgumentParser()
-    parser.add_argument( "--dataset", type=str, default='Facebook', help="Name of the dataset to be used (default: 'Facebook')" )
-    parser.add_argument( "--budgets", nargs='+', type=int, help="Budgets" )
-  
-    args = parser.parse_args()
 
-    # file_path=f'../../data/test/{args.dataset}'
-
-    # file_path=f'../../data/s/{args.dataset}'
-    # graph=load_from_pickle(file_path)
-    load_graph_file_path=f'../../data/snap_dataset/{args.dataset}.txt'
-    graph=nx.read_edgelist(f'../../data/snap_dataset/{args.dataset}.txt', create_using=nx.Graph(), nodetype=int)
-
-
-    covers = []
-
-    # solution,_ = greedy(graph=graph,budget=graph.number_of_nodes())
-    solution,_ = greedy(graph=graph,budget=100)
-
-    covers = [calculate_cover(graph,solution[:i+1]) for i in range(len(solution))]
-    # cover = 0
-    # for i in range(1,graph.number_of_nodes()+1):
-    
-    #     if cover != graph.number_of_nodes():
-    #         solution,_=greedy(graph=graph,budget=i)
-    #         cover=calculate_cover(graph,solution)
-    #         print(cover)
-    #         covers.append(cover)
-    #     else:
-    #         break
-
-    plt.figure(dpi=200)
-    plt.plot (range(1,len(covers)+1),covers)
-    plt.xlabel('Budget')
-    plt.ylabel('Cover')
-    plt.title (f'{args.dataset}')
-    plt.show()
-    
-    # df=defaultdict(list)
-
-    # for budget in args.budgets:
-
-    #     # solution,_=greedy(graph=graph,budget=budget)
-
-    #     # solution,_ = greedy (graph=graph,budget=graph.number_of_nodes())
-
-    #     subgraph =make_subgraph(graph,solution)
-    #     Pv=1-subgraph.number_of_nodes()/graph.number_of_nodes()
-    #     Pe=1-subgraph.number_of_edges()/graph.number_of_edges()
-
-    #     cover=calculate_cover(graph,solution)
-
-    #     df['Budget'].append(budget)
-    #     df['Pv'].append(Pv)
-    #     df['Pe'].append(Pe)
-    #     df['Objective Value'].append(cover)
-    #     df['Objective Value (Ratio)'].append(cover/graph.number_of_nodes())
-    #     df['Solution'].append(solution)
-        
-        
-    # df=pd.DataFrame(df)
-    # print(df)
-    # save_folder=f'data/{args.dataset}'
-    # file_path=os.path.join(save_folder,'Greedy')
-    # os.makedirs(save_folder,exist_ok=True)
-    # save_to_pickle(df,file_path)
 
 
 

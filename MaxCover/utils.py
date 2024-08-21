@@ -176,31 +176,4 @@ def relabel_graph(graph: nx.Graph):
     return graph, forward_mapping, reverse_mapping
 
 
-    # if return_reverse_transformation_dic and return_forward_transformation_dic:
-    #     return nx.relabel_nodes(graph, transformation), transformation, reverse_transformation
-
-    # elif return_forward_transformation_dic:
-    #     return nx.relabel_nodes(graph, transformation), transformation
-
-    # elif return_reverse_transformation_dic:
-    #     return nx.relabel_nodes(graph, transformation), reverse_transformation
-    # nodes = graph.nodes()
-    # n = graph.number_of_nodes()
-    # desired_labels = set([i for i in range(n)])
-    # already_labeled = set([int(node) for node in nodes if node < n])
-    # desired_labels = desired_labels - already_labeled
-    # transformation = {}
-    # reverse_transformation = {}
-    # for node in nodes:
-    #     if node >= graph.number_of_nodes():
-    #         transformation[node] = desired_labels.pop()
-    #         reverse_transformation[transformation[node]] = node
-
-    # if return_reverse_transformation_dic and return_forward_transformation_dic:
-    #     return nx.relabel_nodes(graph, transformation), transformation, reverse_transformation
-
-    # elif return_forward_transformation_dic:
-    #     return nx.relabel_nodes(graph, transformation), transformation
-
-    # elif return_reverse_transformation_dic:
-    #     return nx.relabel_nodes(graph, transformation), reverse_transformation
+ 

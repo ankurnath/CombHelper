@@ -2,7 +2,7 @@ import logging
 import yaml
 import torch
 import torch.optim as optim
-from datasets import *
+# from datasets import * 
 from models import GCN1, TeacherModel
 from utils import * 
 from sklearn.metrics import recall_score,f1_score
@@ -29,7 +29,7 @@ def train(dataset:str,budget:int):
     
     logger.info('Loading dataset...')
     
-    graph=load_from_pickle(f'../data/train/{dataset}')
+    graph=load_from_pickle(f'../../data/train/{dataset}')
 
     train_graph,val_graph = train_test_split(graph=graph,ratio=0.7,edge_level_split=True,seed=0)
     
@@ -107,7 +107,7 @@ def train(dataset:str,budget:int):
     # graph=nx.read_edgelist(f'../../data/snap_dataset/{args.dataset}.txt', create_using=nx.Graph(), nodetype=int)
     # test_graph = nx.read_edgelist(f'../data/snap_dataset/{dataset}.txt', create_using=nx.Graph(), nodetype=int)
     
-    test_graph = load_graph(f'../data/snap_dataset/{dataset}.txt')
+    test_graph = load_graph(f'../../data/snap_dataset/{dataset}.txt')
     test_graph,_,_ = relabel_graph(graph=test_graph)
     test_data = preprocessing(graph=test_graph,budget=budget).to(device)
     model.eval()
