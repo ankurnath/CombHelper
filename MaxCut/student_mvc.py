@@ -149,7 +149,7 @@ def train(dataset,budget):
     
     ##################################################################
 
-    Pg=len(pruned_universe)/graph.number_of_nodes()
+    Pg=len(pruned_universe)/test_graph.number_of_nodes()
     start = time.time()
     objective_unpruned,queries_unpruned,solution_unpruned= greedy(graph=test_graph,budget=budget)
     end = time.time()

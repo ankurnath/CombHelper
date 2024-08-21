@@ -22,3 +22,6 @@ python student_mvc.py --dataset YouTube
 
 python teacher_mvc.py --dataset Skitter
 python student_mvc.py --dataset Skitter
+
+python teacher_mvc.py --dataset web-Google
+python student_mvc.py --dataset web-Google
