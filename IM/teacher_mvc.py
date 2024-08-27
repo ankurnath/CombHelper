@@ -108,6 +108,7 @@ def train(dataset:str,budget:int):
     # test_graph = nx.read_edgelist(f'../data/snap_dataset/{dataset}.txt', create_using=nx.Graph(), nodetype=int)
     
     test_graph = load_graph(f'../../data/snap_dataset/{dataset}.txt')
+    
     test_graph,_,_ = relabel_graph(graph=test_graph)
     test_data = preprocessing(graph=test_graph,budget=budget).to(device)
     model.eval()
@@ -123,20 +124,26 @@ def train(dataset:str,budget:int):
 
     Pg=len(pruned_universe)/test_graph.number_of_nodes()
     start = time.time()
-    solution_unpruned,queries_unpruned= greedy(test_graph,budget)
+    # objective_unpruned,queries_unpruned,solution_unpruned= greedy(graph=test_graph,budget=budget) 
+    solution_unpruned = imm(graph=test_graph,seed_size=budget)
+
+
     end = time.time()
     time_unpruned = round(end-start,4)
     print('Elapsed time (unpruned):',round(time_unpruned,4))
 
+    subgraph = make_subgraph(test_graph,pruned_universe)
     start = time.time()
-    solution_pruned,queries_pruned = greedy(graph=test_graph,budget=budget,ground_set=pruned_universe)
+    solution_pruned = imm(graph=subgraph,seed_size=budget)
     end = time.time()
     time_pruned = round(end-start,4)
     print('Elapsed time (pruned):',time_pruned)
+
+    objective_pruned = calculate_obj(graph=test_graph,solution=solution_pruned)
+    objective_unpruned = calculate_obj(graph=test_graph,solution=solution_unpruned)
     
     
-    objective_unpruned = calculate_obj(test_graph,solution_unpruned)
-    objective_pruned = calculate_obj(test_graph,solution_pruned)
+   
     
     ratio = objective_pruned/objective_unpruned
 
@@ -147,7 +154,7 @@ def train(dataset:str,budget:int):
     print('Size of Pruned Ground Set, |Upruned|:', len(pruned_universe))
     print('Pg(%):', round(Pg,4)*100)
     print('Ratio:',round(ratio,4)*100)
-    print('Queries:',round(queries_pruned/queries_unpruned,4)*100)
+    # print('Queries:',round(queries_pruned/queries_unpruned,4)*100)
 
 
     save_folder = f'data/{dataset}'
@@ -156,10 +163,14 @@ def train(dataset:str,budget:int):
 
     df ={      'Dataset':dataset,'Budget':budget,'Objective Value(Unpruned)':objective_unpruned,
               'Objective Value(Pruned)':objective_pruned ,'Ground Set': test_graph.number_of_nodes(),
-              'Ground set(Pruned)':len(pruned_universe), 'Queries(Unpruned)': queries_unpruned,'Time(Unpruned)':time_unpruned,
+              'Ground set(Pruned)':len(pruned_universe), 
+            #   'Queries(Unpruned)': queries_unpruned, 
+              'Time(Unpruned)':time_unpruned,
               'Time(Pruned)': time_pruned,
-              'Queries(Pruned)': queries_pruned, 'Pruned Ground set(%)': round(Pg,4)*100,
-              'Ratio(%)':round(ratio,4)*100, 'Queries(%)': round(queries_pruned/queries_unpruned,4)*100,
+            #   'Queries(Pruned)': queries_pruned, 
+              'Pruned Ground set(%)': round(Pg,4)*100,
+              'Ratio(%)':round(ratio,4)*100, 
+            #   'Queries(%)': round(queries_pruned/queries_unpruned,4)*100, 
               'TimeRatio': time_pruned/time_unpruned,
               'TimeToPrune':time_to_prune
 
