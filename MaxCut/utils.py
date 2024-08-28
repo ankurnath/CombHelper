@@ -92,9 +92,9 @@ def preprocessing(graph:nx.Graph,budget:int):
     # for i in range(graph.number_of_nodes()):
     #     x[i] = nx.degree(graph, i)
     # x = torch.tensor([graph.degree(node) for node in graph.nodes()])
-    FFM_matrix = torch.load(os.path.join('data', 'FFM-1-_1024.pt'))
-    x_proj = (2. * np.pi * x) @ FFM_matrix.T
-    x = np.concatenate([np.sin(x_proj), np.cos(x_proj)], axis=1)
+    # FFM_matrix = torch.load(os.path.join('data', 'FFM-1-_1024.pt'))
+    # x_proj = (2. * np.pi * x) @ FFM_matrix.T
+    # x = np.concatenate([np.sin(x_proj), np.cos(x_proj)], axis=1)
     data.x = torch.FloatTensor(x)
     # print(data.x.shape)
     return data

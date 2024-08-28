@@ -153,14 +153,17 @@ def train(dataset,budget):
     start = time.time()
     # objective_unpruned,queries_unpruned,solution_unpruned= greedy(graph=test_graph,budget=budget) 
     solution_unpruned = imm(graph=test_graph,seed_size=budget)
+    queries_unpruned  = budget/2 * (2*test_graph.number_of_nodes() - budget +1) 
+
+
     end = time.time()
     time_unpruned = round(end-start,4)
     print('Elapsed time (unpruned):',round(time_unpruned,4))
 
     subgraph = make_subgraph(test_graph,pruned_universe)
     start = time.time()
-    # objective_pruned,queries_pruned,solution_pruned = greedy(graph=test_graph,budget=budget,ground_set=pruned_universe) 
     solution_pruned = imm(graph=subgraph,seed_size=budget)
+    queries_pruned  = budget/2 * (2*len(pruned_universe) - budget +1) 
     end = time.time()
     time_pruned = round(end-start,4)
     print('Elapsed time (pruned):',time_pruned)
@@ -178,7 +181,7 @@ def train(dataset,budget):
     print('Size of Pruned Ground Set, |Upruned|:', len(pruned_universe))
     print('Pg(%):', round(Pg,4)*100)
     print('Ratio:',round(ratio,4)*100)
-    # print('Queries:',round(queries_pruned/queries_unpruned,4)*100)
+    print('Queries:',round(queries_pruned/queries_unpruned,4)*100)
 
 
     save_folder = f'data/{dataset}'
@@ -188,13 +191,13 @@ def train(dataset,budget):
     df ={      'Dataset':dataset,'Budget':budget,'Objective Value(Unpruned)':objective_unpruned,
               'Objective Value(Pruned)':objective_pruned ,'Ground Set': test_graph.number_of_nodes(),
               'Ground set(Pruned)':len(pruned_universe), 
-            #   'Queries(Unpruned)': queries_unpruned, 
+              'Queries(Unpruned)': queries_unpruned, 
               'Time(Unpruned)':time_unpruned,
               'Time(Pruned)': time_pruned,
-            #   'Queries(Pruned)': queries_pruned, 
+              'Queries(Pruned)': queries_pruned, 
               'Pruned Ground set(%)': round(Pg,4)*100,
               'Ratio(%)':round(ratio,4)*100, 
-            #   'Queries(%)': round(queries_pruned/queries_unpruned,4)*100, 
+              'Queries(%)': round(queries_pruned/queries_unpruned,4)*100, 
               'TimeRatio': time_pruned/time_unpruned,
               'TimeToPrune':time_to_prune
 

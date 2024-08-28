@@ -32,7 +32,8 @@ def train(dataset:str,budget:int):
     graph=load_from_pickle(f'../../data/train/{dataset}')
 
     train_graph,val_graph = train_test_split(graph=graph,ratio=0.7,edge_level_split=True,seed=0)
-    
+    # print(train_graph.number_of_nodes())
+    # print(val_graph.number_of_nodes())
     train_graph,_,_ = relabel_graph(graph=train_graph)
     val_graph,_,_ = relabel_graph(graph=val_graph)
     train_data = preprocessing(graph=train_graph,budget=budget).to(device)
@@ -51,7 +52,8 @@ def train(dataset:str,budget:int):
     model.reset_parameters()
     
 
-    optimizer = optim.Adam(model.parameters(), lr=config['teacher']['lr'], weight_decay=config['teacher']['weight_decay'])
+    optimizer = optim.Adam(model.parameters(), lr=config['teacher']['lr'], 
+                           weight_decay=config['teacher']['weight_decay'])
 
     epochs = config['teacher']['epochs']
 
@@ -115,6 +117,7 @@ def train(dataset:str,budget:int):
     out = model.encoder(test_data)
     preds = out.argmax(dim=-1)
     pruned_universe = torch.nonzero(preds).squeeze().tolist()
+    # print(pruned_universe)
     end= time.time()
     time_to_prune = end-start
     print('time elapsed to pruned',time_to_prune)
@@ -122,6 +125,7 @@ def train(dataset:str,budget:int):
     ##################################################################
 
     Pg=len(pruned_universe)/test_graph.number_of_nodes()
+    print("Pg:",Pg)
     start = time.time()
     solution_unpruned,queries_unpruned= greedy(test_graph,budget)
     end = time.time()

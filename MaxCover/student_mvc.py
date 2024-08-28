@@ -28,7 +28,7 @@ def train(dataset,budget):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     logger.info('Loading dataset...')
-    graph=load_from_pickle(f'../data/train/{dataset}')
+    graph=load_from_pickle(f'../../data/train/{dataset}')
 
     train_graph,val_graph = train_test_split(graph=graph,ratio=0.7,edge_level_split=True,seed=0)
     
@@ -133,7 +133,7 @@ def train(dataset,budget):
     # test_graph = load_from_pickle(f'../data/test/{dataset}')
     # test_graph = nx.read_edgelist(f'../data/snap_dataset/{dataset}.txt', create_using=nx.Graph(), nodetype=int)
     # test_graph = load_from_pickle(f'../data/train/{dataset}')
-    test_graph = load_graph(f'../data/snap_dataset/{dataset}.txt')
+    test_graph = load_graph(f'../../data/snap_dataset/{dataset}.txt')
     test_graph,_,_ = relabel_graph(graph=test_graph)
     test_data = preprocessing(graph=test_graph,budget=budget).to(device)
     model.eval()
@@ -162,8 +162,8 @@ def train(dataset,budget):
     print('Elapsed time (pruned):',time_pruned)
     
     
-    objective_unpruned = calculate_cover(test_graph,solution_unpruned)
-    objective_pruned = calculate_cover(test_graph,solution_pruned)
+    objective_unpruned = calculate_obj(test_graph,solution_unpruned)
+    objective_pruned = calculate_obj(test_graph,solution_pruned)
     
     ratio = objective_pruned/objective_unpruned
 
